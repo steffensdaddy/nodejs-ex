@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal sample using ADAL.JS</title>
+    <meta charset="utf-8" />
+    <style type="text/css">
+        body {
+            font-family: Tahoma;
+            padding: 3em;
+        }
+    </style>
+    <script src="https://secure.aadcdn.microsoftonline-p.com/lib/1.0.11/js/adal.min.js"></script>
+</head>
+<body>
+    <p>
+        A minimal sample app using ADAL.JS and vanilla JavaScript to obtain
+        an access token from Azure Active Directory and make an API request.
+    </p>
+    <p>
+        
+    </p>
+    <p id="username"></p>
+    <pre id="api_response"></pre>
+
+    <script type="text/javascript">
+        // Set up ADAL
+		
+        var authContext = new AuthenticationContext({
+            clientId: 'a5147c25-46ac-4925-be5a-4fc5e73bc3dc',
+            postLogoutRedirectUri: 'https://localhost:56610/Sites/*'
+        });
+		
+        // this is Make an AJAX request to the Microsoft Graph API and print the response as JSON.
+        var getCurrentUser = function (access_token) {
+            document.getElementById('api_response').textContent = 'Calling API...';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://graph.microsoft.com/v1.0/me', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + access_token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Do something with the response
+                    document.getElementById('api_response').textContent =
+                        JSON.stringify(JSON.parse(xhr.responseText), null, '  ');
+                } else {
+                    // TODO: Do something with the error (or non-200 responses)
+                    //document.getElementById('api_response').textContent =
+                    //    'ERROR: GETME \n\n' + xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        // Make an AJAX request to the Microsoft Graph API and print the response as JSON.
+        var getRootSite = function (access_token) {
+            document.getElementById('api_response').textContent = 'Calling API...';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://graph.microsoft.com/v1.0//sites/root', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + access_token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Do something with the response
+                    document.getElementById('api_response').textContent = document.getElementById('api_response').textContent + 
+                        JSON.stringify(JSON.parse(xhr.responseText), null, '  ');
+                } else {
+                    // TODO: Do something with the error (or non-200 responses)
+                    //document.getElementById('api_response').textContent = document.getElementById('api_response').textContent +
+                    //    'ERROR: ROOTSITE \n\n' + xhr.responseText + xhr.readyState + xhr.status ;
+                }
+            };
+            xhr.send();
+        }
+		
+        if (authContext.isCallback(window.location.hash)) {
+            
+            // Handle redirect after token requests
+            authContext.handleWindowCallback();
+            var err = authContext.getLoginError();
+            if (err) {
+                // TODO: Handle errors signing in and getting tokens
+               // document.getElementById('api_response').textContent =
+               //     'ERROR: CALLBACK \n\n' + err;
+            }
+        } else {
+            
+            // If logged in, get access token and make an API request
+            var user = authContext.getCachedUser();
+            if (user) {
+                document.getElementById('username').textContent = 'Signed in as: ' + user.userName;
+                document.getElementById('api_response').textContent = 'Getting access token...';
+
+                // Get an access token to the Microsoft Graph API
+                authContext.acquireToken(
+                    'https://graph.microsoft.com',
+                    function (error, token) {
+                        if (error || !token) {
+                            // TODO: Handle error obtaining access token
+                            document.getElementById('api_response').textContent =
+                                'ERROR: TOKEN \n\n' + error;
+                            return;
+                        }
+                        // Use the access token
+                        getCurrentUser(token);
+                        getRootSite(token);
+                    }
+                );
+            } else {
+                authContext.login();
+                document.getElementById('username').textContent = 'Not signed in.';
+            }
+        }
+		/*
+		var getToken = function () {
+            document.getElementById('api_response').textContent = 'Calling API...';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://login.microsoftonline.com/common/oauth2/authorize?client_id=a5147c25-46ac-4925-be5a-4fc5e73bc3dc&response_type=token&resource=https%3A%2F%2Fgraph.microsoft.com%2F&response_mode=fragment&redirect_uri=file:%2F%2F%2FC%3A%2FfromSP%2FConnect.html&domain_hint=organizations&login_hint=vikas.sharma@cox.com', true);
+            
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+					alert(xhr.responseText);
+                    // Do something with the response
+                    document.getElementById('api_response').textContent =
+                        JSON.stringify(JSON.parse(xhr.responseText), null, '  ');
+                } else {
+                    // TODO: Do something with the error (or non-200 responses)
+                    //document.getElementById('api_response').textContent =
+                    //    'ERROR: GETME \n\n' + xhr.responseText;
+                }
+            };
+            xhr.send();
+        } */
+		//getToken();
+    </script>
+	
+  
+</body>
+</html>
